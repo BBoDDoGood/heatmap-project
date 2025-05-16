@@ -1,0 +1,29 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Cache
+.cache/
+
+# Uploads / Outputs / Snaps
+static/uploads/
+static/outputs/
+static/snaps/
+
+# Trajectory .npy
+tracks/
+
+# YOLO weights
+*.pt
+
+# Logs
+flask.log
+
+# OS
+.DS_Store
+Thumbs.db

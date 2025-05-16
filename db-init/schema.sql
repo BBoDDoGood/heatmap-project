@@ -1,0 +1,26 @@
+
+CREATE TABLE IF NOT EXISTS videos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  filename VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS trajectories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  video_id INT NOT NULL,
+  person_id INT NOT NULL,
+  frame_number INT NOT NULL,
+  x INT NOT NULL,
+  y INT NOT NULL,
+  FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS heatmaps (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  video_id INT NOT NULL,
+  time_window_start_sec INT NOT NULL,
+  x_grid INT NOT NULL,
+  y_grid INT NOT NULL,
+  count INT NOT NULL,
+  FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+);

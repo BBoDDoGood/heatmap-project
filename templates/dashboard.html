@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard {{vid}}{% endblock %}
+{% block content %}
+<h3>📊 영상 {{vid}} 대시보드</h3>
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="card p-3">
+    <h5>전체 이동 횟수</h5>
+    <p id="totalMoves" class="display-6">--</p>
+  </div></div>
+  <div class="col-md-4"><div class="card p-3">
+    <h5>평균 체류 시간 (sec)</h5>
+    <p id="avgDwell" class="display-6">--</p>
+  </div></div>
+  <div class="col-md-4"><div class="card p-3">
+    <h5>Top-5 고밀도 구역</h5>
+    <ul id="top5List" class="list-group list-group-flush"></ul>
+  </div></div>
+</div>
+
+<h5>🔳 관심 셀 클릭</h5>
+<div id="heatmapImgContainer" class="position-relative">
+<img id="globalHeatmap"
+     src="{{ url_for('static',
+             filename='outputs/global_heatmap_' ~ vid ~ '.png') }}"
+     class="img-fluid" />
+</div>
+
+<!-- 모달 -->
+<div class="modal fade" id="cellModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content p-3">
+      <h5 id="modalTitle"></h5>
+      <canvas id="cellChart" height="200"></canvas>
+      <div id="snapshots" class="d-flex flex-wrap gap-2 mt-3"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

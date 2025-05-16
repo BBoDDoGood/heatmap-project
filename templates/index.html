@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Heatmap Project</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet" />
+  <style>
+    video, img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    #spinner {
+      display: none;
+      margin-left: 0.5rem;
+    }
+  /* 두 줄짜리 버튼 텍스트를 예쁘게 */
+  .btn-split {
+    white-space: normal;    /* 줄바꿈 허용 */
+    text-align: center;     /* 가운데 정렬 */
+    padding: .5rem 1rem;    /* 기본보다 약간 여유 패딩 */
+    min-width: 5rem;        /* 너무 좁아지지 않도록 */
+  }
+  .btn-split span {
+    display: block;         /* 각 줄을 block 레벨로 */
+    line-height: 1.2;       /* 줄 간격 조정 */
+  }
+  </style>
+</head>
+<body class="p-4">
+  <div class="container">
+    <h2>🎥 히트맵 프로젝트</h2>
+    <form id="frm" class="d-flex align-items-center mb-4">
+      <input type="file" name="video" accept="video/*" class="form-control me-2" required />
+      <button class="btn btn-primary"> 
+          <span>분석</span>
+          <span>시작</span></button>
+      <div id="spinner" class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </form>
+
+    <div class="container mb-4">
+      <label for="historySelect">🔍 이전 분석 결과 보기:</label>
+      <select id="historySelect" class="form-select">
+        <option value="">-- 선택하세요 --</option>
+      </select>
+    </div>
+
+    <!-- 결과가 들어갈 영역 -->
+    <div id="res"></div>
+  </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const frm = document.getElementById('frm'),
+        sp  = document.getElementById('spinner'),
+        res = document.getElementById('res'),
+        sel = document.getElementById('historySelect');
+
+  // 1) 이전 분석 영상 목록 가져와서 드롭다운에 채우기
+  fetch('/api/videos')
+    .then(r => r.json())
+    .then(videos => {
+      videos.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.text  = `#${v.id} — ${v.name}`;
+        sel.append(opt);
+      });
+    });
+
+  // 2) 드롭다운 선택 시 해당 결과 렌더링
+  sel.addEventListener('change', async () => {
+    const vid = sel.value;
+    if (!vid) return;
+    sp.style.display = 'inline-block';
+    res.innerHTML = '';
+    try {
+      const r  = await fetch(`/api/results/${vid}`);
+      if (!r.ok) throw '결과 조회 실패';
+      const js = await r.json();
+      renderResult(js);
+    } catch (err) {
+      alert(err);
+    } finally {
+      sp.style.display = 'none';
+    }
+  });
+
+  // 3) 새 영상 업로드 분석 폼 제출
+  frm.addEventListener('submit', async e => {
+    e.preventDefault();
+    sp.style.display = 'inline-block';
+    frm.querySelector('button').disabled = true;
+    res.innerHTML = '';
+    try {
+      const data = new FormData(frm);
+      const r    = await fetch('/analyze', { method: 'POST', body: data });
+      if (!r.ok) throw '분석 실패';
+      const js   = await r.json();
+      renderResult(js);
+    } catch (err) {
+      alert(err);
+    } finally {
+      sp.style.display = 'none';
+      frm.querySelector('button').disabled = false;
+    }
+  });
+
+  // 결과 렌더링 공통 함수
+  function renderResult(js) {
+    res.innerHTML = `
+      <div class="text-center mb-4">
+        <button id="playAllBtn" class="btn btn-secondary me-2">▶ 모든 영상 재생</button>
+        <a href="/dashboard/${js.video_id}" class="btn btn-success">📊 대시보드 보기</a>
+      </div>
+
+      <h4>바운딩 박스</h4>
+      <video controls muted loop>
+        <source src="${js.detected_video}" type="video/mp4" />
+      </video>
+      <div>
+        <a href="${js.detected_video}" download class="btn btn-sm btn-outline-primary mb-4">
+          영상 다운로드
+        </a>
+      </div>
+
+      <h4>실시간 오버레이</h4>
+      <video controls muted loop>
+        <source src="${js.overlay_video}" type="video/mp4" />
+      </video>
+      <div>
+        <a href="${js.overlay_video}" download class="btn btn-sm btn-outline-primary mb-4">
+          영상 다운로드
+        </a>
+      </div>
+
+      <h4>10프레임 단위 히트맵</h4>
+      <video controls muted loop>
+        <source src="${js.heatmap_video}" type="video/mp4" />
+      </video>
+      <div>
+        <a href="${js.heatmap_video}" download class="btn btn-sm btn-outline-primary mb-4">
+          영상 다운로드
+        </a>
+      </div>
+
+      <h4>전체 히트맵</h4>
+      <img src="${js.global_heatmap}" class="img-fluid" />
+      <div>
+        <a href="${js.global_heatmap}" download class="btn btn-sm btn-outline-primary mb-4">
+          이미지 다운로드
+        </a>
+      </div>
+
+      <h4 class="mt-5">📈 통계</h4>
+      <ul class="list-group mb-4">
+        <li class="list-group-item">총 이동 횟수: ${js.total_moves}</li>
+        <li class="list-group-item">평균 체류 시간 (sec): ${js.avg_dwell.toFixed(1)}</li>
+        <li class="list-group-item">Top-5 고밀도 구역:
+          <ul>
+            ${js.top5.map(c => `<li>(${c.x},${c.y}) — ${c.count}</li>`).join('')}
+          </ul>
+        </li>
+      </ul>
+    `;
+
+    // 모든 영상 재생 바인딩
+    document.getElementById('playAllBtn')
+            .addEventListener('click', () => {
+      res.querySelectorAll('video').forEach(v => v.play());
+    });
+  }
+});
+</script>
+</body>
+</html>

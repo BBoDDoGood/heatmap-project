@@ -1,0 +1,10 @@
+/* 모달 내 스냅샷 썸네일 */
+#snapshots img {
+  width: 120px;
+  height: auto;
+  cursor: pointer;
+  transition: transform .2s;
+}
+#snapshots img:hover {
+  transform: scale(1.05);
+}

@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    container_name: heatmap_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: heatmapdb
+      MYSQL_USER: heatmapuser
+      MYSQL_PASSWORD: 9431
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db-init:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+
+  web:
+    build: .
+    container_name: heatmap_web
+    restart: always
+    depends_on:
+      - db
+    environment:
+      # app.py 에서 os.environ.get() 으로 읽도록 수정 필요
+      DB_HOST: db
+      DB_USER: heatmapuser
+      DB_PASSWORD: 9431
+      DB_NAME: heatmapdb
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./static/uploads:/app/static/uploads
+      - ./static/outputs:/app/static/outputs
+      - ./static/snaps:/app/static/snaps
+
+volumes:
+  db_data:
