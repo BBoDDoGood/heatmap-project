@@ -1,29 +1,48 @@
 name: CI
 
+# main 브랜치로 푸시 또는 PR 발생 시, 그리고 수동 실행(trigger) 지원
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
+    steps:
+      # 1) 코드 체크아웃
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2) Python 설치
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+      # 3) 의존성 설치
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Lint (flake8)
-        run: flake8 .
+      # 4) Black 포맷 체크
+      - name: Check formatting with Black
+        run: |
+          pip install black
+          black --check .
 
-      - name: Run tests (pytest)
-        run: pytest --maxfail=1 --disable-warnings --no-header
+      # 5) Flake8 린트
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 .
+
+      # 6) 유닛 테스트(pytest)
+      - name: Run tests with pytest
+        run: |
+          pip install pytest
+          pytest --maxfail=1 --disable-warnings --no-header
